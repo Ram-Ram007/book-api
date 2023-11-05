@@ -1,104 +1,132 @@
 const { v4: uuidv4 } = require("uuid");
-const { isValidISBN } = require("./Validation/ISBN_validation");
+const isbnValidator = require("./Validation/ISBN_validation");
 
 const books = [
   {
-    id: 1234,
-    title: "wings of fire",
-    isbn: "007462542X",
+    id: "213",
+    title: "",
+    isbn: "",
+  },
+  {
+    id: "215",
+    title: "",
+    isbn: "",
+  },
+  {
+    id: "216",
+    title: "",
+    isbn: "",
   },
 ];
 
-const booksRatings = [
-  {
-    id: 200,
-    rating: 3,
-    bookId: 1234,
-  },
-];
+const ratings = [];
 
 const getAllBooks = () => books;
+
 const addBook = ({ title, isbn }) => {
-  if (isValidISBN(isbn)) {
-    const id = uuidv4();
-    const b = {
-      id,
-      title,
-      isbn,
-    };
-    books.push(b);
-    return b;
-  } else console.log("Invalid");
+  const bookId = uuidv4();
+  if (
+    !isbnValidator.ValidateISBN10(isbn) &&
+    !isbnValidator.ValidateISBN13(isbn)
+  ) {
+    return { error: "Invalid ISBN" };
+  }
+
+  const newBook = {
+    id: bookId,
+    title,
+    isbn,
+  };
+  books.push(newBook);
+  return newBook;
 };
 
 const addRating = ({ rating, bookId }) => {
-  const ratingId = uuidv4();
-
-  const bookRating = {
-    ratingId,
+  const newRating = {
+    id: uuidv4(),
     rating,
     bookId,
   };
-  booksRatings.push(bookRating);
-  return bookRating;
+  ratings.push(newRating);
+  return newRating;
 };
-const getBookById = (id) => {
-  const book = books.find((b) => b.id == id);
+
+const getBook = (bookId) => {
+  const book = books.find((b) => b.id === bookId);
 
   if (!book) {
-    return null;
+    return { error: "Book not found" };
   }
 
-  const ratingEntry = booksRatings.find((b) => b.bookId == id);
+  const bookRating = ratings.find((r) => r.bookId === bookId);
 
-  const rating = ratingEntry ? ratingEntry.rating : 0;
+  if (!bookRating) {
+    // Return 0 if no rating is set for the book
+    book.rating = 0;
+  } else {
+    book.rating = bookRating.rating;
+  }
 
-  b = {
-    id: book.id,
-    title: book.title,
-    isbn: book.isbn,
-    rating: rating,
-  };
-  return b;
-};
-const editBookById = ({ id, title }) => {
-  const idx = books.findIndex((b) => b.id == id);
-  if (idx != -1) {
-    books[idx]["title"] = title;
-    return books[idx];
-  }
-  return null;
-};
-const deleteBookById = (id) => {
-  const idx = books.findIndex((b) => b.id == id);
-  const ratingidx = booksRatings.findIndex((b) => b.bookId == id);
-  if (idx == -1) {
-    return null;
-  }
-  const b = books[idx];
-  books.splice(idx, 1);
-  if (ratingidx !== -1) {
-    const r = books[ratingidx];
-    booksRatings.splice(ratingidx, 1);
-  }
-  return b;
+  return book;
 };
 
-const updateRating = ({ rating, bookId }) => {
-  const idx = booksRatings.findIndex((b) => b.bookId == bookId);
-  if (idx != -1) {
-    booksRatings[idx]["rating"] = rating;
-    return booksRatings[idx];
+const updateBookTitle = (bookId, title) => {
+  const book = books.find((b) => b.id === bookId);
+
+  if (!book) {
+    return { error: "Book not found" };
   }
-  return null;
+
+  book.title = title;
+  return book;
+};
+
+const deleteBook = (bookId) => {
+  const bookIndex = books.findIndex((b) => b.id === bookId);
+
+  if (bookIndex === -1) {
+    return { error: "Book not found" };
+  }
+
+  books.splice(bookIndex, 1);
+  return {};
+};
+
+const updateBookRating = (bookId, rating) => {
+  const book = books.find((b) => b.id === bookId);
+
+  if (!book) {
+    return { error: "Book not found" };
+  }
+
+  const bookRating = ratings.find((r) => r.bookId === bookId);
+
+  if (!bookRating) {
+    return { error: "Rating not found for the book" };
+  }
+
+  bookRating.rating = rating;
+  return bookRating;
+};
+
+const deleteRating = (ratingId) => {
+  const ratingIndex = ratings.findIndex((r) => r.id === ratingId);
+
+  if (ratingIndex === -1) {
+    return { error: "Rating not found" };
+  }
+
+  ratings.splice(ratingIndex, 1);
+  return {};
 };
 
 module.exports = {
   getAllBooks,
   addBook,
   addRating,
-  getBookById,
-  editBookById,
-  deleteBookById,
-  updateRating,
+  getBook,
+  updateBookTitle,
+  deleteBook,
+  updateBookRating,
+  deleteRating,
 };
